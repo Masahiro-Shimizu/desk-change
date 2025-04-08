@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>座敷席ランダム配置（番号固定）</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px auto;
+            font-size: 24px;
+        }
+        th, td {
+            border: 2px solid black;
+            padding: 20px;
+            text-align: center;
+            width: 33%;
+        }
+        .table-container {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin-top: 30px;
+        }
+        .table-layout {
+            text-align: center;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 22px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2 style="font-size: 32px;">座敷席ランダム配置</h2>
+    <button onclick="generateSeating()">席替え</button>
+    <div id="seating"></div>
+
+    <script>
+        const participants = ["佐藤", "鈴木", "須田", "高田", "高橋", "安藤", "宮本", "上原", "高杉",];
+        const tableSizes = [6, 4]; // 1つ目のテーブル6人（3人×2列）、2つ目のテーブル4人（2人×2列）
+        let fixedNumberedParticipants = null; // 個人番号を固定するための変数
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function assignFixedNumbers() {
+            if (!fixedNumberedParticipants) {
+                fixedNumberedParticipants = participants.map((name, index) => ({
+                    number: index + 1, // 固定の番号
+                    name: name
+                }));
+            }
+            return fixedNumberedParticipants;
+        }
+
+        function assignSeats() {
+            let numberedParticipants = assignFixedNumbers();
+            let shuffledSeats = shuffleArray([...numberedParticipants]); // 席のみシャッフル
+
+            let tables = [];
+            let startIndex = 0;
+            let seatNumber = 1; // 席番号を振る
+
+            for (let size of tableSizes) {
+                let table = shuffledSeats.slice(startIndex, startIndex + size);
+                table = table.map(person => `席${seatNumber++}: ${person.number}. ${person.name}`); // 席番号+固定の個人番号
+                tables.push(table);
+                startIndex += size;
+            }
+
+            return tables;
+        }
+
+        function generateSeating() {
+            const seatingArrangement = assignSeats();
+            const seatingDiv = document.getElementById("seating");
+            seatingDiv.innerHTML = "";
+
+            let tableHTML = '<div class="table-container">';
+
+            seatingArrangement.forEach((table, index) => {
+                if (index === 0) { // 6人席（3×2）
+                    tableHTML += `<div class="table-layout">
+                                    <h3 style="font-size: 28px;">テーブル ${index + 1}（6人席）</h3>
+                                    <table>
+                                        <tr>
+                                            <td>${table[0] || ""}</td>
+                                            <td>${table[1] || ""}</td>
+                                            <td>${table[2] || ""}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>${table[3] || ""}</td>
+                                            <td>${table[4] || ""}</td>
+                                            <td>${table[5] || ""}</td>
+                                        </tr>
+                                    </table>
+                                  </div>`;
+                } else { // 4人席（2×2）
+                    tableHTML += `<div class="table-layout">
+                                    <h3 style="font-size: 28px;">テーブル ${index + 1}（4人席）</h3>
+                                    <table>
+                                        <tr>
+                                            <td>${table[0] || ""}</td>
+                                            <td>${table[1] || ""}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>${table[2] || ""}</td>
+                                            <td>${table[3] || ""}</td>
+                                        </tr>
+                                    </table>
+                                  </div>`;
+                }
+            });
+
+            tableHTML += "</div>";
+            seatingDiv.innerHTML = tableHTML;
+        }
+
+        window.onload = generateSeating; // ページ読み込み時に初回実行
+    </script>
+</body>
+</html>
