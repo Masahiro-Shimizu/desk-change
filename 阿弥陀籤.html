@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>あみだくじ - 到着順で順位</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+
+    #inputArea {
+      margin-bottom: 20px;
+    }
+
+    #amida {
+      position: relative;
+      width: 700px;
+      height: 400px;
+      border: 1px solid #ccc;
+      margin: 0 auto 20px;
+    }
+
+    .line {
+      position: absolute;
+      width: 2px;
+      background: black;
+    }
+
+    .horizontal {
+      position: absolute;
+      height: 2px;
+      background: black;
+    }
+
+    .start-label, .goal-label {
+      position: absolute;
+      transform: translateX(-50%);
+    }
+
+    .player {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      z-index: 10;
+      transition: all 0.2s linear;
+    }
+  </style>
+</head>
+<body>
+
+<h1>あみだくじで順番決め（到着順）</h1>
+
+<div id="inputArea">
+  <p>最大6人までの名前を入力してください:</p>
+  <div id="nameInputs">
+    <input type="text" placeholder="名前1">
+    <input type="text" placeholder="名前2">
+    <input type="text" placeholder="名前3">
+    <input type="text" placeholder="名前4">
+    <input type="text" placeholder="名前5">
+    <input type="text" placeholder="名前6">
+  </div>
+  <br>
+  <button onclick="startGame()">あみだくじ開始！</button>
+</div>
+
+<div id="amida"></div>
+
+<div id="result"></div>
+
+<script>
+  const amida = document.getElementById("amida");
+  const rows = 20;
+  const cellHeight = 20;
+  const colWidth = 100;
+  let horizontals = [];
+  let arrivalResults = [];
+  let currentOrder = 1;
+
+  function clearAmida() {
+    amida.innerHTML = '';
+    horizontals = [];
+    arrivalResults = [];
+    currentOrder = 1;
+  }
+
+  function generateLines(players) {
+    const cols = players.length;
+
+    for (let i = 0; i < cols; i++) {
+      const v = document.createElement("div");
+      v.className = "line";
+      v.style.left = `${i * colWidth + 50}px`;
+      v.style.top = "0px";
+      v.style.height = `${rows * cellHeight}px`;
+      amida.appendChild(v);
+
+      const label = document.createElement("div");
+      label.className = "start-label";
+      label.innerText = players[i];
+      label.style.left = `${i * colWidth + 50}px`;
+      label.style.top = "-25px";
+      amida.appendChild(label);
+    }
+
+    for (let r = 0; r < rows; r++) {
+      const possible = [];
+      for (let c = 0; c < cols - 1; c++) {
+        if (Math.random() < 0.3 && !(horizontals[r - 1]?.includes(c))) {
+          possible.push(c);
+          const h = document.createElement("div");
+          h.className = "horizontal";
+          h.style.left = `${c * colWidth + 50}px`;
+          h.style.top = `${r * cellHeight}px`;
+          h.style.width = `${colWidth}px`;
+          amida.appendChild(h);
+        }
+      }
+      horizontals[r] = possible;
+    }
+
+    for (let i = 0; i < cols; i++) {
+      const g = document.createElement("div");
+      g.className = "goal-label";
+      g.innerText = `${i + 1}`;
+      g.style.top = `${rows * cellHeight + 5}px`;
+      g.style.left = `${i * colWidth + 50}px`;
+      amida.appendChild(g);
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function animatePlayer(startCol, name) {
+    let col = startCol;
+    let x = col * colWidth + 40;
+    let y = -10;
+
+    const ball = document.createElement("div");
+    ball.className = "player";
+    ball.style.left = `${x}px`;
+    ball.style.top = `${y}px`;
+    amida.appendChild(ball);
+
+    await sleep(500);
+
+    for (let r = 0; r < rows; r++) {
+      y = r * cellHeight;
+      ball.style.top = `${y}px`;
+      await sleep(150);
+
+      if (horizontals[r]?.includes(col)) {
+        x += colWidth;
+        col++;
+      } else if (col > 0 && horizontals[r]?.includes(col - 1)) {
+        x -= colWidth;
+        col--;
+      }
+
+      ball.style.left = `${x}px`;
+      await sleep(150);
+    }
+
+    arrivalResults.push({ name, order: currentOrder++ });
+  }
+
+  async function startGame() {
+    clearAmida();
+    document.getElementById("result").innerHTML = "";
+
+    const inputs = document.querySelectorAll("#nameInputs input");
+    const names = [...inputs].map(i => i.value.trim()).filter(n => n !== "");
+
+    if (names.length < 2) {
+      alert("2人以上の名前を入力してください。");
+      return;
+    }
+
+    generateLines(names);
+
+    for (let i = 0; i < names.length; i++) {
+      await animatePlayer(i, names[i]);
+    }
+
+    arrivalResults.forEach(result => {
+      document.getElementById("result").innerHTML += `<p>${result.name} さん → 順番 ${result.order} 番</p>`;
+    });
+  }
+</script>
+
+</body>
+</html>
